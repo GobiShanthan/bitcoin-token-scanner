@@ -25,6 +25,7 @@ class Token {
     this.blockHash = data.blockHash;
     this.blockTime = data.blockTime;
     this.isValidScript = data.isValidScript;
+    this.typeCode = data.typeCode;
   }
 
   /**
@@ -151,6 +152,7 @@ class Token {
                   tokenData.blockHash = blockHash;
                   tokenData.blockTime = block.time;
                   tokenData.timestamp = tokenData.timestamp || block.time;
+                  tokenData.typeCode = tokenData.typeCode || 0;
                   
                   // Add to our collection
                   tokens.push(new Token(tokenData));

@@ -12,6 +12,71 @@
   <div class="token-property">
     <strong>Amount:</strong> <%= token.amount %>
   </div>
+  <div class="token-property">
+    <strong>Amount:</strong> <%= token.amount %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Type:</strong> 
+    <% 
+      let typeLabel = "";
+      switch (token.typeCode) {
+        case 0:
+          typeLabel = "Fungible Token (FT)";
+          break;
+        case 1:
+          typeLabel = "Non-Fungible Token (NFT)";
+          break;
+        case 2:
+          typeLabel = "Proof-of-Existence Token (PoE)";
+          break;
+        case 3:
+          typeLabel = "Smart Contract Trigger Token";
+          break;
+        case 4:
+          typeLabel = "Oracle-Verified Token";
+          break;
+        case 5:
+          typeLabel = "Compliance-Bound Token";
+          break;
+        case 6:
+          typeLabel = "Vesting Token";
+          break;
+        case 7:
+          typeLabel = "Multi-Sig Restricted Token";
+          break;
+        case 8:
+          typeLabel = "DAO Governance Token";
+          break;
+        case 9:
+          typeLabel = "Fee Payment Token";
+          break;
+        case 10:
+          typeLabel = "Wrapped Asset Token";
+          break;
+        case 11:
+          typeLabel = "Cross-Chain Bridge Token";
+          break;
+        case 12:
+          typeLabel = "Royalty Token";
+          break;
+        case 13:
+          typeLabel = "Subscription Access Token";
+          break;
+        case 14:
+          typeLabel = "Identity Token";
+          break;
+        case 15:
+          typeLabel = "Treasury Reserve Token";
+          break;
+        default:
+          typeLabel = "Type not yet assigned";
+      }
+    %>
+    <%= token.typeCode %> - <%= typeLabel %>
+  </div>
+  
+  
   
   <div class="token-property">
     <strong>Metadata:</strong> <%= token.metadata %>

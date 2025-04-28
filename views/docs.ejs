@@ -1,48 +1,101 @@
 <!-- views/docs.ejs -->
 
-<h1>TSB Token Scanner Documentation</h1>
+<h1>TSB-P Token Scanner Documentation</h1>
 
 <div class="token-detail">
   <h2>Overview</h2>
   <p>
-    The TSB Token Scanner is a tool for discovering and exploring tokens embedded in the Bitcoin blockchain.
-    These tokens follow a specific protocol that allows arbitrary data and metadata to be attached to Bitcoin transactions.
+    The TSB-P Token Scanner is a tool for discovering and exploring programmable Bitcoin tokens embedded directly within Taproot script paths.
+    These tokens follow the TSB-P protocol, enabling fully Bitcoin-native tokens with metadata, timestamps, and programmable attributes.
   </p>
   
   <h2>Token Format</h2>
   <p>
-    TSB tokens are encoded in the witness data of Bitcoin transactions. The encoding follows this format:
+    TSB-P tokens are encoded inside the witness data of Bitcoin transactions via a Taproot script path.
+    The encoding follows this programmable format:
   </p>
   
   <pre>
-    03 "TSB"                      # TSB marker (3 bytes)
-    10 [token ID]                 # Token ID (16 bytes)
-    08 [amount]                   # Amount (8 bytes, big endian)
-    xx [metadata]                 # Metadata (variable length)
-    08 [timestamp]                # Timestamp (8 bytes, big endian)
-    OP_DROP OP_DROP OP_DROP OP_DROP OP_DROP  # 5 OP_DROP operations
-    OP_TRUE                       # Final OP_TRUE
+    OP_TRUE
+    OP_IF
+      03 "TSB"                      # TSB marker (3 bytes)
+      10 [token ID]                 # Token ID (16 bytes)
+      08 [amount]                   # Amount (8 bytes, big endian)
+      01 [typeCode]                 # Type Code (1 byte)
+      OP_DROP
+      OP_DROP
+      OP_DROP
+      OP_DROP
+      [metadata]                    # Metadata (variable length)
+      08 [timestamp]                # Timestamp (8 bytes, big endian)
+      OP_DROP
+      OP_DROP
+      OP_TRUE
+    OP_ENDIF
   </pre>
-  
+
+  <p><strong>Field Descriptions:</strong></p>
+  <ul>
+    <li><strong>TSB:</strong> Marker to identify token scripts</li>
+    <li><strong>Token ID:</strong> Unique 16-byte identifier (padded with zeros if shorter)</li>
+    <li><strong>Amount:</strong> 8-byte unsigned integer representing the token supply</li>
+    <li><strong>TypeCode:</strong> 1-byte integer specifying the token type (see below)</li>
+    <li><strong>Metadata:</strong> Arbitrary user-defined metadata (string)</li>
+    <li><strong>Timestamp:</strong> 8-byte UNIX timestamp (creation time)</li>
+  </ul>
+
+  <h2>Token Type Codes</h2>
+  <p>Each token has a <code>typeCode</code> indicating its purpose:</p>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>TypeCode</th>
+        <th>Meaning</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>Fungible Token (FT)</td></tr>
+      <tr><td>1</td><td>Non-Fungible Token (NFT)</td></tr>
+      <tr><td>2</td><td>Proof-of-Existence Token (PoE)</td></tr>
+      <tr><td>3</td><td>Smart Contract Trigger Token</td></tr>
+      <tr><td>4</td><td>Oracle-Verified Token</td></tr>
+      <tr><td>5</td><td>Compliance-Bound Token (KYC/AML)</td></tr>
+      <tr><td>6</td><td>Vesting Token (timelocked tokens)</td></tr>
+      <tr><td>7</td><td>Multi-Sig Restricted Token</td></tr>
+      <tr><td>8</td><td>DAO Governance Token</td></tr>
+      <tr><td>9</td><td>Fee Payment Token (for protocol usage)</td></tr>
+      <tr><td>10</td><td>Wrapped Asset Token (cross-chain)</td></tr>
+      <tr><td>11</td><td>Cross-Chain Bridge Token</td></tr>
+      <tr><td>12</td><td>Royalty Token (revenue shares)</td></tr>
+      <tr><td>13</td><td>Subscription Access Token</td></tr>
+      <tr><td>14</td><td>Identity Token (KYC / verifiable claims)</td></tr>
+      <tr><td>15</td><td>Treasury Reserve Token (DAO reserve)</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>Note:</strong> If a token's typeCode is not assigned (outside 0-15), it will be displayed as "Unknown Type (XX)".</p>
+
   <h2>API Endpoints</h2>
   
   <h3>GET /api/tokens</h3>
-  <p>Returns a list of all tokens found in the blockchain.</p>
+  <p>Returns a list of all TSB-P tokens found in the blockchain.</p>
   <p><strong>Query Parameters:</strong></p>
   <ul>
-    <li><code>refresh=true</code>: Force a refresh of the token cache</li>
+    <li><code>refresh=true</code>: Force a full re-scan of the blockchain (ignores cache)</li>
   </ul>
   <p><strong>Example:</strong> <a href="/api/tokens" target="_blank">/api/tokens</a></p>
   
   <h3>GET /api/token/:txid</h3>
-  <p>Returns details for a specific token identified by its transaction ID.</p>
+  <p>Returns detailed information about a specific token by its transaction ID.</p>
   <p><strong>Parameters:</strong></p>
   <ul>
-    <li><code>txid</code>: Transaction ID of the token</li>
+    <li><code>txid</code>: Transaction ID containing the token witness</li>
   </ul>
-  <p><strong>Example:</strong> <code>/api/token/1234...abcd</code></p>
+  <p><strong>Example:</strong> <code>/api/token/4fef74...ccc59</code></p>
   
   <h3>GET /api/status</h3>
-  <p>Returns status information about the connected Bitcoin node.</p>
+  <p>Returns status and connection information about the Bitcoin node used by the scanner.</p>
   <p><strong>Example:</strong> <a href="/api/status" target="_blank">/api/status</a></p>
+
 </div>

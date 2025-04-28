@@ -3,105 +3,113 @@
  * Parses token data from a Bitcoin witness script hex string
  * based on your specific TSB token format
  */
+// utils/tokenParser.js
+
 class TokenParser {
-    /**
-     * Parse token data from hex string
-     * @param {string} witnessHex - The hex string of the witness script
-     * @returns {object|null} - The parsed token data or null if not a valid token
-     */
-    static parse(witnessHex) {
-      try {
-        const buffer = Buffer.from(witnessHex, 'hex');
-        
-        // Bitcoin script format decoding
-        let offset = 0;
-        
-        // Check first byte to see if it's a push operation
-        const firstByte = buffer[offset++];
-        if (firstByte !== 0x03) {
-          return null; // Not a 3-byte push for "TSB"
-        }
-        
-        // Check for "TSB" marker
-        const tsbMarker = buffer.slice(offset, offset + 3).toString();
-        if (tsbMarker !== 'TSB') {
-          return null;
-        }
-        offset += 3;
-        
-        // Next should be 0x10 (16) for token ID length
-        const tokenIdLengthByte = buffer[offset++];
-        if (tokenIdLengthByte !== 0x10) {
-          return null;
-        }
-        
-        // Read token ID (16 bytes)
-        const tokenIdRaw = buffer.slice(offset, offset + 16);
-        offset += 16;
-        
-        // Clean null bytes from token ID
-        const tokenId = tokenIdRaw.toString().replace(/\0+$/, '');
-        
-        // Next should be 0x08 (8) for amount length
-        const amountLengthByte = buffer[offset++];
-        if (amountLengthByte !== 0x08) {
-          return null;
-        }
-        
-        // Read amount (8 bytes, big endian)
-        const amountBuf = buffer.slice(offset, offset + 8);
-        const amount = amountBuf.readBigUInt64BE(0);
-        offset += 8;
-        
-        // Read metadata length
-        const metadataLengthByte = buffer[offset++];
-        
-        // Read metadata
-        const metadata = buffer.slice(offset, offset + metadataLengthByte).toString();
-        offset += metadataLengthByte;
-        
-        // Next should be 0x08 (8) for timestamp length
-        const timestampLengthByte = buffer[offset++];
-        if (timestampLengthByte !== 0x08) {
-          // If timestamp isn't included, return what we have
-          return {
-            tokenId,
-            amount: Number(amount),
-            metadata,
-            timestamp: null
-          };
-        }
-        
-        // Read timestamp (8 bytes, big endian)
-        const timestampBuf = buffer.slice(offset, offset + 8);
-        const timestamp = timestampBuf.readBigUInt64BE(0);
-        offset += 8;
-        
-        // Verify OP_DROP sequence (0x75 = OP_DROP)
-        if (buffer[offset++] !== 0x75 || 
-            buffer[offset++] !== 0x75 || 
-            buffer[offset++] !== 0x75 || 
-            buffer[offset++] !== 0x75 || 
-            buffer[offset++] !== 0x75) {
-          // Missing the 5 OP_DROP operations, but we've still found token data
-          // Just return it without validation
-        }
-        
-        // Last byte should be OP_TRUE (0x51)
-        const hasTrueOp = buffer[offset] === 0x51;
-        
-        return {
-          tokenId,
-          amount: Number(amount),
-          metadata,
-          timestamp: Number(timestamp),
-          isValidScript: hasTrueOp
-        };
-      } catch (err) {
-        console.error('Error parsing token data:', err);
+  static parse(witnessHex) {
+    try {
+      const buffer = Buffer.from(witnessHex, 'hex');
+      let offset = 0;
+
+      // 1. Expect OP_TRUE (0x51)
+      if (buffer[offset++] !== 0x51) {
+        console.log('Not starting with OP_TRUE');
         return null;
       }
+
+      // 2. Expect OP_IF (0x63)
+      if (buffer[offset++] !== 0x63) {
+        console.log('Missing OP_IF');
+        return null;
+      }
+
+      // 3. Check marker push (0x03 and "TSB")
+      if (buffer[offset++] !== 0x03) {
+        console.log('Missing marker push');
+        return null;
+      }
+      const marker = buffer.slice(offset, offset + 3).toString();
+      if (marker !== 'TSB') {
+        console.log('Invalid marker');
+        return null;
+      }
+      offset += 3;
+
+      // 4. TokenID
+      if (buffer[offset++] !== 0x10) { // length 16
+        console.log('Invalid token ID length');
+        return null;
+      }
+      const tokenIdRaw = buffer.slice(offset, offset + 16);
+      const tokenId = tokenIdRaw.toString().replace(/\0+$/, '');
+      offset += 16;
+
+      // 5. Amount
+      if (buffer[offset++] !== 0x08) {
+        console.log('Invalid amount length');
+        return null;
+      }
+      const amountBuf = buffer.slice(offset, offset + 8);
+      const amount = amountBuf.readBigUInt64BE(0);
+      offset += 8;
+
+      // 6. TypeCode
+      const typeCodeBuf = buffer[offset++];
+      let typeCode = typeCodeBuf;
+      // Convert OP_N values to integers
+if (typeCode >= 0x51 && typeCode <= 0x60) {
+  typeCode = typeCode - 0x50;
+}
+
+      // 7. Expect 4x OP_DROP (0x75)
+      for (let i = 0; i < 4; i++) {
+        if (buffer[offset++] !== 0x75) {
+          console.log('Missing one of 4 OP_DROP');
+          return null;
+        }
+      }
+
+      // 8. Metadata
+      const metadataLength = buffer[offset++];
+      const metadataRaw = buffer.slice(offset, offset + metadataLength);
+      const metadata = metadataRaw.toString();
+      offset += metadataLength;
+
+      // 9. Timestamp
+      if (buffer[offset++] !== 0x08) {
+        console.log('Missing timestamp length byte');
+        return null;
+      }
+      const timestampBuf = buffer.slice(offset, offset + 8);
+      const timestamp = timestampBuf.readBigUInt64BE(0);
+      offset += 8;
+
+      // 10. Expect 2x OP_DROP
+      if (buffer[offset++] !== 0x75 || buffer[offset++] !== 0x75) {
+        console.log('Missing 2 OP_DROP after metadata/timestamp');
+        return null;
+      }
+
+      // 11. Expect OP_TRUE (0x51)
+      if (buffer[offset++] !== 0x51) {
+        console.log('Missing final OP_TRUE');
+        return null;
+      }
+
+      return {
+        tokenId,
+        amount: Number(amount),
+        typeCode,
+        metadata,
+        timestamp: Number(timestamp),
+        isValid: true
+      };
+
+    } catch (err) {
+      console.error('Error parsing token data:', err);
+      return null;
     }
   }
-  
-  module.exports = TokenParser;
+}
+
+module.exports = TokenParser;

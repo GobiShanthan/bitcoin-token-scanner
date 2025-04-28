@@ -1,6 +1,5 @@
 
 <!-- views/index.ejs -->
-
 <h1>Bitcoin Token Scanner</h1>
 
 <button class="refresh-btn" onclick="window.location.href='/?refresh=true'">Force Refresh Scan</button>
@@ -15,18 +14,84 @@
     
     <% tokens.forEach(token => { %>
       <div class="token-card">
+        <!-- New Type Badge -->
+        <div class="token-type">
+          <% 
+            let typeBadge = "";
+            switch (token.typeCode) {
+              case 0:
+                typeBadge = "Fungible Token (FT)";
+                break;
+              case 1:
+                typeBadge = "Non-Fungible Token (NFT)";
+                break;
+              case 2:
+                typeBadge = "Proof-of-Existence Token (PoE)";
+                break;
+              case 3:
+                typeBadge = "Smart Contract Trigger Token";
+                break;
+              case 4:
+                typeBadge = "Oracle-Verified Token";
+                break;
+              case 5:
+                typeBadge = "Compliance-Bound Token";
+                break;
+              case 6:
+                typeBadge = "Vesting Token";
+                break;
+              case 7:
+                typeBadge = "Multi-Sig Restricted Token";
+                break;
+              case 8:
+                typeBadge = "DAO Governance Token";
+                break;
+              case 9:
+                typeBadge = "Fee Payment Token";
+                break;
+              case 10:
+                typeBadge = "Wrapped Asset Token";
+                break;
+              case 11:
+                typeBadge = "Cross-Chain Bridge Token";
+                break;
+              case 12:
+                typeBadge = "Royalty Token";
+                break;
+              case 13:
+                typeBadge = "Subscription Access Token";
+                break;
+              case 14:
+                typeBadge = "Identity Token";
+                break;
+              case 15:
+                typeBadge = "Treasury Reserve Token";
+                break;
+              default:
+                typeBadge = "Unknown Type (" + token.typeCode + ")";
+            }
+          %>
+          <span class="badge">
+            <%= token.typeCode %> - <%= typeBadge %>
+          </span>
+        </div>
+
         <div class="token-id"><%= token.tokenId %></div>
+        
         <div class="token-meta">
           <strong>Amount:</strong> <%= token.amount %><br>
           <strong>Metadata:</strong> <%= token.metadata %><br>
           <strong>Block Height:</strong> <%= token.blockHeight %><br>
-          <strong>Timestamp:</strong> <span class="timestamp" data-timestamp="<%= token.timestamp %>">
+          <strong>Timestamp:</strong> 
+          <span class="timestamp" data-timestamp="<%= token.timestamp %>">
             <%= new Date(token.timestamp * 1000).toLocaleString() %>
           </span>
         </div>
+
         <div class="token-txid">
           <strong>TXID:</strong> <%= token.txid %>
         </div>
+
         <a href="/token/<%= token.txid %>" class="details-btn">View Details</a>
       </div>
     <% }); %>
