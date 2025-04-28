@@ -1,0 +1,24 @@
+{
+    "name": "bitcoin-token-scanner",
+    "version": "1.0.0",
+    "description": "An MVC application for scanning and exploring tokens in the Bitcoin blockchain",
+    "main": "app.js",
+    "scripts": {
+      "start": "node app.js",
+      "dev": "nodemon app.js",
+      "test": "jest"
+    },
+    "dependencies": {
+      "bitcoin-core": "^3.0.0",
+      "ejs": "^3.1.9",
+      "express": "^4.18.2",
+      "express-ejs-layouts": "^2.5.1"
+    },
+    "devDependencies": {
+      "jest": "^29.7.0",
+      "nodemon": "^3.0.1"
+    },
+    "engines": {
+      "node": ">=14.0.0"
+    }
+  }

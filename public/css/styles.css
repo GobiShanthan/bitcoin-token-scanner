@@ -1,0 +1,161 @@
+/* public/css/styles.css */
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  h1 {
+    color: #f7931a;
+  }
+  
+  .token-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+  }
+  
+  .token-id {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-bottom: 5px;
+  }
+  
+  .token-meta {
+    color: #555;
+  }
+  
+  .token-txid {
+    font-family: monospace;
+    word-break: break-all;
+  }
+  
+  .refresh-btn {
+    background-color: #f7931a;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  
+  .details-btn {
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: inline-block;
+    margin-top: 10px;
+  }
+  
+  .no-tokens {
+    color: #777;
+    font-style: italic;
+  }
+  
+  .navbar {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #ddd;
+  }
+  
+  .nav-brand {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #f7931a;
+    text-decoration: none;
+  }
+  
+  .nav-links {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .nav-link {
+    color: #333;
+    text-decoration: none;
+    padding: 5px 10px;
+  }
+  
+  .nav-link:hover {
+    color: #f7931a;
+  }
+  
+  .nav-link.active {
+    font-weight: bold;
+    color: #f7931a;
+  }
+  
+  /* Token detail page */
+  .token-detail {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .token-detail h2 {
+    margin-top: 0;
+    color: #f7931a;
+  }
+  
+  .token-property {
+    margin-bottom: 10px;
+  }
+  
+  .token-property strong {
+    display: inline-block;
+    width: 120px;
+  }
+  
+  .tx-details {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  
+  .tx-details pre {
+    background-color: #f0f0f0;
+    padding: 10px;
+    overflow-x: auto;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+  
+  /* Error page */
+  .error-container {
+    background-color: #fff0f0;
+    border: 1px solid #ffcccc;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  
+  .error-title {
+    color: #d9534f;
+    margin-top: 0;
+  }
+  
+  .back-btn {
+    background-color: #f7931a;
+    color: white;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 15px;
+  }

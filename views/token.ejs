@@ -1,0 +1,48 @@
+<!-- views/token.ejs -->
+
+<h1>Token Details</h1>
+
+<div class="token-detail">
+  <h2><%= token.tokenId %></h2>
+  
+  <div class="token-property">
+    <strong>Token ID:</strong> <%= token.tokenId %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Amount:</strong> <%= token.amount %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Metadata:</strong> <%= token.metadata %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Block Height:</strong> <%= token.blockHeight %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Block Hash:</strong> <%= token.blockHash %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Timestamp:</strong> <span class="timestamp" data-timestamp="<%= token.timestamp %>">
+      <%= new Date(token.timestamp * 1000).toLocaleString() %>
+    </span>
+  </div>
+  
+  <div class="token-property">
+    <strong>Transaction ID:</strong> <%= token.txid %>
+  </div>
+  
+  <div class="token-property">
+    <strong>Valid Script:</strong> <%= token.isValidScript ? 'Yes' : 'No' %>
+  </div>
+  
+  <a href="/" class="details-btn">Back to List</a>
+</div>
+
+<div class="tx-details">
+  <h3>Transaction Details</h3>
+  <pre><%= JSON.stringify(rawTx, null, 2) %></pre>
+</div>

@@ -1,0 +1,34 @@
+
+<!-- views/index.ejs -->
+
+<h1>Bitcoin Token Scanner</h1>
+
+<button class="refresh-btn" onclick="window.location.href='/?refresh=true'">Force Refresh Scan</button>
+
+<h2>Found Tokens</h2>
+
+<div class="token-list">
+  <% if (tokens.length === 0) { %>
+    <p class="no-tokens">No tokens found. Try mining more blocks with token transactions.</p>
+  <% } else { %>
+    <p>Found <%= tokens.length %> tokens in the blockchain.</p>
+    
+    <% tokens.forEach(token => { %>
+      <div class="token-card">
+        <div class="token-id"><%= token.tokenId %></div>
+        <div class="token-meta">
+          <strong>Amount:</strong> <%= token.amount %><br>
+          <strong>Metadata:</strong> <%= token.metadata %><br>
+          <strong>Block Height:</strong> <%= token.blockHeight %><br>
+          <strong>Timestamp:</strong> <span class="timestamp" data-timestamp="<%= token.timestamp %>">
+            <%= new Date(token.timestamp * 1000).toLocaleString() %>
+          </span>
+        </div>
+        <div class="token-txid">
+          <strong>TXID:</strong> <%= token.txid %>
+        </div>
+        <a href="/token/<%= token.txid %>" class="details-btn">View Details</a>
+      </div>
+    <% }); %>
+  <% } %>
+</div>

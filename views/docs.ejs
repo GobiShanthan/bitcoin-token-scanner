@@ -1,0 +1,48 @@
+<!-- views/docs.ejs -->
+
+<h1>TSB Token Scanner Documentation</h1>
+
+<div class="token-detail">
+  <h2>Overview</h2>
+  <p>
+    The TSB Token Scanner is a tool for discovering and exploring tokens embedded in the Bitcoin blockchain.
+    These tokens follow a specific protocol that allows arbitrary data and metadata to be attached to Bitcoin transactions.
+  </p>
+  
+  <h2>Token Format</h2>
+  <p>
+    TSB tokens are encoded in the witness data of Bitcoin transactions. The encoding follows this format:
+  </p>
+  
+  <pre>
+    03 "TSB"                      # TSB marker (3 bytes)
+    10 [token ID]                 # Token ID (16 bytes)
+    08 [amount]                   # Amount (8 bytes, big endian)
+    xx [metadata]                 # Metadata (variable length)
+    08 [timestamp]                # Timestamp (8 bytes, big endian)
+    OP_DROP OP_DROP OP_DROP OP_DROP OP_DROP  # 5 OP_DROP operations
+    OP_TRUE                       # Final OP_TRUE
+  </pre>
+  
+  <h2>API Endpoints</h2>
+  
+  <h3>GET /api/tokens</h3>
+  <p>Returns a list of all tokens found in the blockchain.</p>
+  <p><strong>Query Parameters:</strong></p>
+  <ul>
+    <li><code>refresh=true</code>: Force a refresh of the token cache</li>
+  </ul>
+  <p><strong>Example:</strong> <a href="/api/tokens" target="_blank">/api/tokens</a></p>
+  
+  <h3>GET /api/token/:txid</h3>
+  <p>Returns details for a specific token identified by its transaction ID.</p>
+  <p><strong>Parameters:</strong></p>
+  <ul>
+    <li><code>txid</code>: Transaction ID of the token</li>
+  </ul>
+  <p><strong>Example:</strong> <code>/api/token/1234...abcd</code></p>
+  
+  <h3>GET /api/status</h3>
+  <p>Returns status information about the connected Bitcoin node.</p>
+  <p><strong>Example:</strong> <a href="/api/status" target="_blank">/api/status</a></p>
+</div>

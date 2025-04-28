@@ -1,0 +1,13 @@
+<!-- views/error.ejs -->
+
+<div class="error-container">
+  <h1 class="error-title">Error</h1>
+  <p><%= message %></p>
+  <% if (error && error.status) { %>
+    <p>Status: <%= error.status %></p>
+  <% } %>
+  <% if (process.env.NODE_ENV === 'development' && error && error.stack) { %>
+    <pre><%= error.stack %></pre>
+  <% } %>
+  <a href="/" class="back-btn">Back to Home</a>
+</div>
