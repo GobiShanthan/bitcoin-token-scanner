@@ -42,4 +42,3 @@ app.listen(port, () => {
   console.log(`Token scanner running at http://localhost:${port}`);
 });
 
-module.exports = app; // For testing purposes

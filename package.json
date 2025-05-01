@@ -4,21 +4,25 @@
     "description": "An MVC application for scanning and exploring tokens in the Bitcoin blockchain",
     "main": "app.js",
     "scripts": {
-      "start": "node app.js",
-      "dev": "nodemon app.js",
-      "test": "jest"
+        "start": "node app.js",
+        "dev": "nodemon app.js",
+        "test": "jest"
     },
     "dependencies": {
-      "bitcoin-core": "^3.0.0",
-      "ejs": "^3.1.9",
-      "express": "^4.18.2",
-      "express-ejs-layouts": "^2.5.1"
+        "axios": "^1.9.0",
+        "bitcoin-core": "^3.0.0",
+        "bitcoinjs-lib": "^6.1.7",
+        "dotenv": "^16.5.0",
+        "ejs": "^3.1.9",
+        "express": "^4.18.2",
+        "express-ejs-layouts": "^2.5.1",
+        "mongoose": "^8.14.1"
     },
     "devDependencies": {
-      "jest": "^29.7.0",
-      "nodemon": "^3.0.1"
+        "jest": "^29.7.0",
+        "nodemon": "^3.0.1"
     },
     "engines": {
-      "node": ">=14.0.0"
+        "node": ">=14.0.0"
     }
-  }
+}

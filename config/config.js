@@ -7,25 +7,26 @@ const env = process.env.NODE_ENV || 'development';
 const config = {
   development: {
     bitcoin: {
-      network: 'regtest',
+      network: 'testnet',
       username: 'admin',  // Replace with your actual RPC username
       password: '1234',   // Replace with your actual RPC password
-      port: 18443,        // Default regtest port
+      port: 18332,        // Default regtest port
       host: 'localhost'
     },
     cache: {
       ttl: 60 * 1000      // 1 minute cache TTL
     },
     scan: {
-      maxBlocks: 100      // Default number of blocks to scan
+      dynamic: false,
+      fixedStart: 4321372
     }
   },
   production: {
     bitcoin: {
-      network: process.env.BTC_NETWORK || 'regtest',
+      network: process.env.BTC_NETWORK || 'testnet',
       username: process.env.BTC_USERNAME || 'admin',
       password: process.env.BTC_PASSWORD || '1234',
-      port: process.env.BTC_PORT || 18443,
+      port: process.env.BTC_PORT || 18332,
       host: process.env.BTC_HOST || 'localhost'
     },
     cache: {
@@ -37,10 +38,10 @@ const config = {
   },
   test: {
     bitcoin: {
-      network: 'regtest',
-      username: 'test',
-      password: 'test',
-      port: 18443,
+      network: 'testnet',
+      username: 'admin',
+      password: '1234',
+      port: 18332,
       host: 'localhost'
     },
     cache: {
