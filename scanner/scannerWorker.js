@@ -102,6 +102,22 @@ async function updateScannedHeight(height, hash) {
   await BlockProgress.updateProgress(height, hash);
 }
 
+async function retryWithBackoff(fn, args = [], retries = 5, delay = 200, label = 'retry') {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      return await fn(...args);
+    } catch (err) {
+      attempt++;
+      if (attempt === retries) throw err;
+
+      const backoff = delay * Math.pow(2, attempt); // exponential
+      console.warn(`⚠️ ${label} failed (${attempt}/${retries}), retrying in ${backoff}ms: ${err.message}`);
+      await new Promise((res) => setTimeout(res, backoff));
+    }
+  }
+}
+
 async function scanNewBlocks() {
   try {
     const blockchainInfo = await BitcoinService.getBlockchainInfo();
@@ -112,8 +128,8 @@ async function scanNewBlocks() {
       const height = lastScanned + 1;
 
       try {
-        const blockHash = await BitcoinService.getBlockHash(height);
-        const block = await BitcoinService.getBlock(blockHash);
+        const blockHash = await retryWithBackoff(BitcoinService.getBlockHash, [height], 5, 200, 'getBlockHash');
+        const block = await retryWithBackoff(BitcoinService.getBlock, [blockHash], 5, 200, 'getBlock');
 
         console.log(`🔍 Scanning block ${height} (${block.tx.length} txs)`);
 
@@ -137,7 +153,7 @@ async function scanNewBlocks() {
                   typeCode: parsed.typeCode || 0,
                 });
 
-                await token.save();
+                await retryWithBackoff(() => token.save(), [], 5, 200, 'token.save');
                 console.log(`✅ Saved token ${parsed.tokenId}`);
               }
             }
@@ -146,9 +162,13 @@ async function scanNewBlocks() {
 
         await updateScannedHeight(height, blockHash);
         lastScanned = height;
+
+        if (process.env.USE_MEMPOOL_API === 'true') {
+          await new Promise((res) => setTimeout(res, 300)); // rate limit safe
+        }
       } catch (err) {
-        console.error(`❌ Error scanning block ${lastScanned + 1}: ${err.message}`);
-        break; // exit loop to retry on next interval
+        console.error(`❌ Failed to process block ${height}: ${err.message}`);
+        break;
       }
     }
   } catch (err) {
@@ -158,9 +178,15 @@ async function scanNewBlocks() {
 
 async function start() {
   await connectToMongo();
-  await scanNewBlocks(); // Run immediately once
-  const interval = parseInt(process.env.SCAN_INTERVAL_MS || '60000', 10);
-  setInterval(scanNewBlocks, interval); // Run every minute
+
+  const isMempool = process.env.USE_MEMPOOL_API === 'true';
+  const interval = isMempool
+    ? parseInt(process.env.SCAN_INTERVAL_MS || '60000', 10)
+    : parseInt(process.env.SCAN_INTERVAL_MS || '5000', 10);
+
+  console.log(`🕒 Scanner running every ${interval} ms`);
+  await scanNewBlocks();
+  setInterval(scanNewBlocks, interval);
 }
 
 start().catch(console.error);
