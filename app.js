@@ -1,7 +1,10 @@
 // app.js - Main Express application entry point
+require('dotenv').config(); 
+
 const express = require('express');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
+const connectDB = require('./config/database'); // ✅ add this line
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -37,8 +40,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Token scanner running at http://localhost:${port}`);
-});
-
+// ✅ Start server only after MongoDB connection is successful
+connectDB()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`✅ Token scanner running at http://localhost:${port}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ Failed to connect to MongoDB:', err);
+    process.exit(1);
+  });

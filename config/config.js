@@ -1,26 +1,28 @@
-// config/config.js - Application configuration
 const path = require('path');
 
-// Environment-specific configurations
 const env = process.env.NODE_ENV || 'development';
 
 const config = {
   development: {
     bitcoin: {
       network: 'testnet',
-      username: 'admin',  // Replace with your actual RPC username
-      password: '1234',   // Replace with your actual RPC password
-      port: 18332,        // Default regtest port
+      username: 'admin',
+      password: '1234',
+      port: 18332,
       host: 'localhost'
     },
     cache: {
-      ttl: 60 * 1000      // 1 minute cache TTL
+      ttl: 60 * 1000
     },
     scan: {
       dynamic: false,
       fixedStart: 4321372
+    },
+    mongodb: {
+      uri: process.env.MONGO_URI || 'mongodb://localhost:27017/tsbscanner'
     }
   },
+
   production: {
     bitcoin: {
       network: process.env.BTC_NETWORK || 'testnet',
@@ -30,12 +32,16 @@ const config = {
       host: process.env.BTC_HOST || 'localhost'
     },
     cache: {
-      ttl: process.env.CACHE_TTL || 5 * 60 * 1000  // 5 minutes cache TTL
+      ttl: process.env.CACHE_TTL || 5 * 60 * 1000
     },
     scan: {
-      maxBlocks: process.env.MAX_BLOCKS || 100     // Default number of blocks to scan
+      maxBlocks: process.env.MAX_BLOCKS || 100
+    },
+    mongodb: {
+      uri: process.env.MONGO_URI || 'mongodb://localhost:27017/tsbscanner'
     }
   },
+
   test: {
     bitcoin: {
       network: 'testnet',
@@ -45,10 +51,13 @@ const config = {
       host: 'localhost'
     },
     cache: {
-      ttl: 1000  // 1 second cache TTL for testing
+      ttl: 1000
     },
     scan: {
       maxBlocks: 10
+    },
+    mongodb: {
+      uri: process.env.MONGO_URI || 'mongodb://localhost:27017/tsbscanner'
     }
   }
 };
