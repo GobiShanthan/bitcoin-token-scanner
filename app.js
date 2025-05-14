@@ -7,6 +7,10 @@ const expressLayouts = require('express-ejs-layouts');
 const connectDB = require('./config/database'); // ✅ add this line
 const app = express();
 const port = process.env.PORT || 3000;
+const cors = require('cors');
+
+// ✅ Open CORS: Allow all origins
+app.use(cors());
 
 // Load configuration
 const config = require('./config/config');
