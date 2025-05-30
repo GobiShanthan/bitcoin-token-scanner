@@ -554,9 +554,36 @@ async function findAllTSBTokensInTransaction(transactions, blockHeight, blockHas
 
 
 // Add this at the top of your start() function:
+// Add this to your start() function, right after connecting to MongoDB:
 async function start() {
   try {
     await connectToMongo();
+
+    // 🚨 EMERGENCY RESET - Force update database to target block
+    if (process.env.FORCE_START_BLOCK === '4429585') {
+      console.log(`🚨 EMERGENCY RESET: Forcing database to block 4429585`);
+      
+      try {
+        // Direct database update
+        await BlockProgress.updateOne(
+          {},
+          { 
+            lastScannedHeight: 4429585,
+            lastScannedHash: null,
+            updatedAt: new Date()
+          },
+          { upsert: true }
+        );
+        
+        console.log(`✅ EMERGENCY RESET COMPLETE: Database updated to block 4429585`);
+        
+        // Clear the emergency flag
+        process.env.FORCE_START_BLOCK = 'DONE';
+        
+      } catch (err) {
+        console.error(`❌ EMERGENCY RESET FAILED:`, err);
+      }
+    }
 
     // Remove debug/test mode for production
     if (process.env.NODE_ENV !== 'production') {
@@ -576,7 +603,7 @@ async function start() {
     console.log(`   Scan interval: ${interval} ms`);
     console.log(`   Environment: ${process.env.NODE_ENV}`);
     
-    // Get current status
+    // Get current status AFTER potential reset
     const progress = await BlockProgress.findOne();
     const totalTokens = await TokenModel.countDocuments();
     console.log(`   Current position: Block ${progress?.lastScannedHeight || 'Not started'}`);
