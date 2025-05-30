@@ -130,6 +130,36 @@ async function retryWithBackoff(fn, args = [], retries = 5, delay = 200, label =
 /**
  * SMART HYBRID SCANNER - Fast catch-up + Live monitoring
  */
+// async function scanNewBlocks() {
+//   try {
+//     const blockchainInfo = await BitcoinService.getBlockchainInfo();
+//     const currentHeight = blockchainInfo.blocks;
+//     let lastScanned = await getLastScannedHeight();
+
+//     const blocksToScan = currentHeight - lastScanned;
+//     const CATCH_UP_THRESHOLD = 100; // Switch to high-speed if more than 100 blocks behind
+
+//     console.log(`🔍 TSB Scanner - Current height: ${currentHeight}, last scanned: ${lastScanned}`);
+//     console.log(`📊 Blocks behind: ${blocksToScan}`);
+
+//     if (blocksToScan > CATCH_UP_THRESHOLD) {
+//       // HIGH-SPEED CATCH-UP MODE
+//       console.log(`🚀 CATCH-UP MODE: Processing ${blocksToScan} blocks in high-speed mode...`);
+//       await highSpeedCatchUp(lastScanned, currentHeight);
+//     } else {
+//       // NORMAL LIVE MONITORING MODE
+//       console.log(`⚡ LIVE MONITORING MODE: Processing ${blocksToScan} blocks normally...`);
+//       await normalLiveScanning(lastScanned, currentHeight);
+//     }
+
+//   } catch (err) {
+//     console.error('❌ FULL ERROR in smart scanNewBlocks():');
+//     console.error(err);
+//     console.error('Error message:', err.message);
+//     console.error('Error stack:', err.stack);
+//   }
+// }
+
 async function scanNewBlocks() {
   try {
     const blockchainInfo = await BitcoinService.getBlockchainInfo();
@@ -137,18 +167,24 @@ async function scanNewBlocks() {
     let lastScanned = await getLastScannedHeight();
 
     const blocksToScan = currentHeight - lastScanned;
-    const CATCH_UP_THRESHOLD = 100; // Switch to high-speed if more than 100 blocks behind
+    const CATCH_UP_THRESHOLD = 100;
 
     console.log(`🔍 TSB Scanner - Current height: ${currentHeight}, last scanned: ${lastScanned}`);
     console.log(`📊 Blocks behind: ${blocksToScan}`);
 
-    if (blocksToScan > CATCH_UP_THRESHOLD) {
-      // HIGH-SPEED CATCH-UP MODE
-      console.log(`🚀 CATCH-UP MODE: Processing ${blocksToScan} blocks in high-speed mode...`);
+    // 🔧 CHECK IF LOCAL ENVIRONMENT
+    const isLocal = process.env.NODE_ENV !== 'production' || 
+                   process.env.BTC_HOST === 'localhost' ||
+                   !process.env.HEROKU_APP_NAME;
+
+    if (blocksToScan > CATCH_UP_THRESHOLD && isLocal) {
+      // HIGH-SPEED CATCH-UP MODE (local only)
+      console.log(`🚀 LOCAL CATCH-UP MODE: Processing ${blocksToScan} blocks in high-speed mode...`);
       await highSpeedCatchUp(lastScanned, currentHeight);
     } else {
-      // NORMAL LIVE MONITORING MODE
-      console.log(`⚡ LIVE MONITORING MODE: Processing ${blocksToScan} blocks normally...`);
+      // LIVE MONITORING MODE (always for production, also for local when caught up)
+      const mode = isLocal ? 'LOCAL LIVE' : 'PRODUCTION LIVE';
+      console.log(`⚡ ${mode} MONITORING MODE: Processing ${blocksToScan} blocks normally...`);
       await normalLiveScanning(lastScanned, currentHeight);
     }
 
@@ -312,44 +348,49 @@ async function normalLiveScanning(lastScanned, currentHeight) {
 /**
  * Fast token finding for high-speed mode (less logging)
  */
-async function findAllTSBTokensInTransaction(tx, blockHeight, blockHash, blockTime) {
+/**
+ * Fast token finding for high-speed mode (less logging)
+ */
+async function findAllTSBTokensInTransaction_Fast(block, blockHeight, blockHash) {
   const tokens = [];
   const foundTokens = new Set(); // Track tokens found in this transaction
 
-  for (const vin of tx.vin) {
-    if (vin.txinwitness && vin.txinwitness.length >= 2) {
-      const witnessScript = vin.txinwitness[0];
-      
-      if (witnessScript && witnessScript.length > 50 && witnessScript.includes('545342')) {
-        const parsed = TokenParser.parse(witnessScript);
+  for (const tx of block.tx) {
+    for (const vin of tx.vin) {
+      if (vin.txinwitness && vin.txinwitness.length >= 2) {
+        const witnessScript = vin.txinwitness[0];
         
-        if (parsed) {
-          // Create unique key for this token in this transaction
-          const tokenKey = `${tx.txid}-${parsed.tokenId}`;
+        if (witnessScript && witnessScript.length > 50 && witnessScript.includes('545342')) {
+          const parsed = TokenParser.parse(witnessScript);
           
-          // Skip if we already found this token in this transaction
-          if (foundTokens.has(tokenKey)) {
-            console.log(`⚠️ Skipping duplicate ${parsed.tokenId} in tx ${tx.txid}`);
-            continue;
+          if (parsed) {
+            // Create unique key for this token in this transaction
+            const tokenKey = `${tx.txid}-${parsed.tokenId}`;
+            
+            // Skip if we already found this token in this transaction
+            if (foundTokens.has(tokenKey)) {
+              console.log(`⚠️ Skipping duplicate ${parsed.tokenId} in tx ${tx.txid}`);
+              continue;
+            }
+            
+            foundTokens.add(tokenKey);
+            
+            const token = new TokenModel({
+              tokenId: parsed.tokenId,
+              amount: parsed.amount,
+              metadata: parsed.rawMetadata || parsed.metadata,
+              timestamp: parsed.timestamp || block.time,
+              txid: tx.txid,
+              blockHeight: blockHeight,
+              blockHash: blockHash,
+              blockTime: block.time,
+              isValidScript: true,
+              typeCode: parsed.typeCode || 0,
+            });
+            
+            tokens.push(token);
+            console.log(`✅ Found unique TSB token: "${parsed.tokenId}" in tx ${tx.txid}`);
           }
-          
-          foundTokens.add(tokenKey);
-          
-          const token = new TokenModel({
-            tokenId: parsed.tokenId,
-            amount: parsed.amount,
-            metadata: parsed.rawMetadata || parsed.metadata,
-            timestamp: parsed.timestamp || blockTime,
-            txid: tx.txid,
-            blockHeight: blockHeight,
-            blockHash: blockHash,
-            blockTime: blockTime,
-            isValidScript: true,
-            typeCode: parsed.typeCode || 0,
-          });
-          
-          tokens.push(token);
-          console.log(`✅ Found unique TSB token: "${parsed.tokenId}" in tx ${tx.txid}`);
         }
       }
     }
@@ -417,6 +458,11 @@ async function findAllTSBTokensInTransaction(transactions, blockHeight, blockHas
 
   return tokens;
 }
+
+
+
+
+
 // Add this at the top of your start() function:
 async function start() {
   try {
