@@ -172,42 +172,38 @@ async function scanNewBlocks() {
     console.log(`🔍 TSB Scanner - Current height: ${currentHeight}, last scanned: ${lastScanned}`);
     console.log(`📊 Blocks behind: ${blocksToScan}`);
 
-    // Check if local environment
-    const isLocal = process.env.NODE_ENV !== 'production' || 
-                   process.env.BTC_HOST === 'localhost' ||
-                   !process.env.HEROKU_APP_NAME;
+    // 🔧 CHECK ENVIRONMENT VARIABLES FOR CONTROL
+    const disableHighSpeed = process.env.DISABLE_HIGH_SPEED === 'true';
+    const forceLiveMode = process.env.FORCE_LIVE_MODE === 'true';
+    const apiDelay = parseInt(process.env.API_DELAY_MS || '300', 10);
+    const blockDelay = parseInt(process.env.BLOCK_DELAY_MS || '1000', 10);
+    const retryDelay = parseInt(process.env.RETRY_DELAY_MS || '200', 10);
 
-    if (blocksToScan > CATCH_UP_THRESHOLD && isLocal) {
-      // HIGH-SPEED CATCH-UP MODE (local only)
-      console.log(`🚀 LOCAL CATCH-UP MODE: Processing ${blocksToScan} blocks in high-speed mode...`);
-      await highSpeedCatchUp(lastScanned, currentHeight);
-    } else {
-      // LIVE MONITORING MODE (production or local when caught up)
-      const mode = isLocal ? 'LOCAL LIVE' : 'PRODUCTION LIVE';
-      console.log(`⚡ ${mode} MONITORING MODE: Processing ${blocksToScan} blocks normally...`);
+    console.log(`⚙️ Config: HIGH_SPEED=${!disableHighSpeed}, FORCE_LIVE=${forceLiveMode}, API_DELAY=${apiDelay}ms, BLOCK_DELAY=${blockDelay}ms`);
+
+    if (disableHighSpeed || forceLiveMode) {
+      console.log(`🌐 ENV CONTROLLED: Using live monitoring mode only`);
+      console.log(`⚡ LIVE MONITORING MODE: Processing ${blocksToScan} blocks with ENV delays...`);
       
-      // Process blocks one by one with rate limiting
+      // Process blocks one by one with ENV-controlled delays
       while (lastScanned < currentHeight) {
         const height = lastScanned + 1;
 
         try {
-          // 🔧 ADD DELAY BEFORE API CALLS TO PREVENT RATE LIMITING
-          const isProduction = process.env.NODE_ENV === 'production';
-          const useMempool = process.env.USE_MEMPOOL_API === 'true';
-          
-          if (isProduction && useMempool) {
-            console.log(`⏱️ Production rate limiting: waiting 800ms before API call...`);
-            await new Promise(res => setTimeout(res, 800));
+          // Pre-API delay
+          if (apiDelay > 0) {
+            console.log(`⏱️ ENV controlled delay: waiting ${apiDelay}ms before API call...`);
+            await new Promise(res => setTimeout(res, apiDelay));
           }
 
-          const blockHash = await retryWithBackoff(BitcoinService.getBlockHash, [height], 5, 200, 'getBlockHash');
+          const blockHash = await retryWithBackoff(BitcoinService.getBlockHash, [height], 5, retryDelay, 'getBlockHash');
           
-          // Additional delay between API calls
-          if (useMempool) {
-            await new Promise(res => setTimeout(res, 300));
+          // Delay between API calls
+          if (apiDelay > 0) {
+            await new Promise(res => setTimeout(res, Math.floor(apiDelay / 2)));
           }
           
-          const block = await retryWithBackoff(BitcoinService.getBlock, [blockHash], 5, 200, 'getBlock');
+          const block = await retryWithBackoff(BitcoinService.getBlock, [blockHash], 5, retryDelay, 'getBlock');
 
           console.log(`🔍 LIVE: Scanning block ${height} (${block.tx.length} txs) for TSB tokens...`);
           
@@ -231,23 +227,24 @@ async function scanNewBlocks() {
           await updateScannedHeight(height, blockHash);
           lastScanned = height;
 
-          // Rate limiting delay between blocks
-          let delay = 100; // default
-          if (isProduction && useMempool) {
-            delay = 1200; // 1.2 seconds for production + mempool API
-          } else if (useMempool) {
-            delay = 500; // 0.5 second for local + mempool API
+          // Block delay
+          if (blockDelay > 0) {
+            console.log(`⏱️ ENV controlled block delay: waiting ${blockDelay}ms before next block...`);
+            await new Promise(res => setTimeout(res, blockDelay));
           }
-          
-          await new Promise(res => setTimeout(res, delay));
 
         } catch (err) {
           console.error(`❌ Failed to process live block ${height}: ${err.message}`);
           
           // Handle rate limiting errors
           if (err.message.includes('429')) {
-            console.log(`⏸️ Rate limit hit, waiting 10 seconds before retry...`);
-            await new Promise(res => setTimeout(res, 10000));
+            const rateLimitDelay = parseInt(process.env.RATE_LIMIT_DELAY_MS || '30000', 10);
+            console.log(`⏸️ Rate limit hit, waiting ${rateLimitDelay}ms before retry...`);
+            await new Promise(res => setTimeout(res, rateLimitDelay));
+          } else {
+            const errorDelay = parseInt(process.env.ERROR_DELAY_MS || '5000', 10);
+            console.log(`⏸️ Error occurred, waiting ${errorDelay}ms before retry...`);
+            await new Promise(res => setTimeout(res, errorDelay));
           }
           break;
         }
@@ -256,6 +253,15 @@ async function scanNewBlocks() {
       // Final statistics
       const totalTokens = await TokenModel.countDocuments();
       console.log(`📊 LIVE MONITORING complete - Total tokens in database: ${totalTokens}`);
+      
+    } else if (blocksToScan > CATCH_UP_THRESHOLD) {
+      // HIGH-SPEED CATCH-UP MODE (when not disabled by ENV)
+      console.log(`🚀 CATCH-UP MODE: Processing ${blocksToScan} blocks in high-speed mode...`);
+      await highSpeedCatchUp(lastScanned, currentHeight);
+    } else {
+      // NORMAL LIVE MONITORING MODE
+      console.log(`⚡ LIVE MONITORING MODE: Processing ${blocksToScan} blocks normally...`);
+      await normalLiveScanning(lastScanned, currentHeight);
     }
 
   } catch (err) {
@@ -265,7 +271,6 @@ async function scanNewBlocks() {
     console.error('Error stack:', err.stack);
   }
 }
-
 /**
  * HIGH-SPEED CATCH-UP MODE - Process many blocks quickly
  */
