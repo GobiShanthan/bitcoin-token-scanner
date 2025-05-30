@@ -93,19 +93,34 @@ async function connectToMongo() {
   console.log('✅ Connected to MongoDB');
 }
 
-// Find this function and change it back:
+// Find your getLastScannedHeight function and replace it with this:
 async function getLastScannedHeight() {
-  // One-time reset for production
-  if (process.env.RESET_SCAN_HEIGHT) {
-    console.log(`🔄 RESET: Forcing scan from block ${process.env.RESET_SCAN_HEIGHT}`);
-    await BlockProgress.updateProgress(parseInt(process.env.RESET_SCAN_HEIGHT), null);
-    // Remove the env var after first use
-    delete process.env.RESET_SCAN_HEIGHT;
+  // 🔄 CHECK FOR FORCED RESET FIRST
+  if (process.env.FORCE_START_BLOCK) {
+    const forceBlock = parseInt(process.env.FORCE_START_BLOCK, 10);
+    
+    // Get current progress to see if we need to reset
+    const currentProgress = await BlockProgress.getProgress();
+    
+    if (currentProgress.lastScannedHeight !== forceBlock) {
+      console.log(`🔄 FORCE RESET: Current block ${currentProgress.lastScannedHeight} → Target block ${forceBlock}`);
+      
+      try {
+        await BlockProgress.updateProgress(forceBlock, null);
+        console.log(`✅ Scanner successfully reset to block ${forceBlock}`);
+        return forceBlock;
+      } catch (err) {
+        console.error(`❌ Failed to reset scanner: ${err.message}`);
+      }
+    } else {
+      console.log(`✅ Scanner already at target block ${forceBlock}`);
+    }
   }
   
   const progress = await BlockProgress.getProgress();
   return progress.lastScannedHeight;
 }
+
 
 async function updateScannedHeight(height, hash) {
   await BlockProgress.updateProgress(height, hash);
