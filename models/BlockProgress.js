@@ -24,7 +24,7 @@ blockProgressSchema.statics.getProgress = async function() {
   if (!progress) {
     // Initialize with a starting block if none exists
     progress = await this.create({
-      lastScannedHeight: process.env.INITIAL_BLOCK_HEIGHT || 4321372, // Use your desired starting point
+      lastScannedHeight: process.env.INITIAL_BLOCK_HEIGHT || 442900, // Use your desired starting point
       lastScanTimestamp: new Date()
     });
   }

@@ -16,7 +16,7 @@ const config = {
     },
     scan: {
       dynamic: false,
-      fixedStart: 4321372
+      fixedStart: 4429000
     },
     mongodb: {
       uri: process.env.MONGO_URI || 'mongodb://localhost:27017/tsbscanner'
