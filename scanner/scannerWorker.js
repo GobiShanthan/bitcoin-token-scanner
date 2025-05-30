@@ -95,10 +95,17 @@ async function connectToMongo() {
 
 // Find this function and change it back:
 async function getLastScannedHeight() {
+  // One-time reset for production
+  if (process.env.RESET_SCAN_HEIGHT) {
+    console.log(`🔄 RESET: Forcing scan from block ${process.env.RESET_SCAN_HEIGHT}`);
+    await BlockProgress.updateProgress(parseInt(process.env.RESET_SCAN_HEIGHT), null);
+    // Remove the env var after first use
+    delete process.env.RESET_SCAN_HEIGHT;
+  }
+  
   const progress = await BlockProgress.getProgress();
   return progress.lastScannedHeight;
 }
-
 
 async function updateScannedHeight(height, hash) {
   await BlockProgress.updateProgress(height, hash);
