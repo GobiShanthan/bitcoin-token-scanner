@@ -83,8 +83,9 @@ const TokenParser = require('../utils/tokenParser');
 const BlockProgress = require('../models/BlockProgress');
 const TokenModel = require('../models/TokenMongo');
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
+console.log('🧪 MONGO_URI Inside scannerWorker:', process.env.MONGO_URI);
 async function connectToMongo() {
   await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/tsbscanner', {
     useNewUrlParser: true,
